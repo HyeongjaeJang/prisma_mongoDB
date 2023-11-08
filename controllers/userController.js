@@ -1,83 +1,149 @@
 const prisma = require("../prisma/index");
-const cookeieToken = require("../utils/cookieToken");
 const isEmail = require("validator/lib/isEmail");
 const isStrongPassword = require("validator/lib/isStrongPassword");
 const argon2 = require("argon2");
+const getjwtToken = require("../helpers/getJwtToken");
+const verJwtToken = require("../helpers/verJwtToken");
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, type } = req.body;
-    if (!name || !email || !password || !type) {
-      return res.status(400).json({ error: "Please provide all fields" });
+    const {
+      data: { username, email, password, type },
+    } = req.body;
+    if (!username || !email || !password || !type) {
+      return res.json({ error: "Please provide all fields" });
     }
 
     if (!isEmail(email)) {
-      return res.status(400).json({ error: "Email is invalid" });
+      return res.json({ error: "Email is invalid" });
     }
 
     if (!isStrongPassword(password)) {
-      return res.status(400).json({ error: "Strong password is required" });
+      return res.json({ error: "Strong password is required" });
     }
+
+    if (!!(await prisma.user.findFirst({ where: { email: email } }))) {
+      return res.json({ error: "Already registered" });
+    }
+    if (!!(await prisma.organization.findFirst({ where: { email: email } }))) {
+      return res.json({ error: "Already registered" });
+    }
+
     const hash = await argon2.hash(password);
     let user = "";
     let org = "";
+
     if (type == "normal") {
       user = await prisma.user.create({
         data: {
-          name,
-          email,
+          name: username,
+          email: email,
           password: hash,
-          type,
+          type: type,
         },
       });
-      res.status(200).json({ message: "User registered" });
-      cookeieToken(user, res);
     } else {
       org = await prisma.organization.create({
         data: {
-          name,
-          email,
+          name: username,
+          email: email,
           password: hash,
-          type,
+          type: type,
         },
       });
-      res.status(200).json({ message: "Organization registered" });
-      cookeieToken(org, res);
     }
+
+    const signedToken = getjwtToken(user.id || org.id);
+
+    return res
+      .cookie("token", signedToken, {
+        expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        httpOnly: true,
+      })
+      .json({
+        success: true,
+        signedToken,
+      });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.json({ error: "Internal server error" });
   }
 };
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      data: { email, password },
+    } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Please provide all fields" });
+      return res.json({ error: "Please provide all fields" });
     }
+
     if (!isEmail(email)) {
-      return res.status(400).json({ error: "Email is invalid" });
+      return res.json({ error: "Email is invalid" });
     }
 
     const user = await prisma.user.findFirst({
       where: { email: email },
     });
 
-    if (!user) {
-      return res.status(404).json({ error: "Invalid email or password" });
-    }
+    const org = await prisma.organization.findFirst({
+      where: { email: email },
+    });
+
+    if (!user && !org)
+      return res.json({ error: "You must need to register first." });
 
     if (!(await argon2.verify(user.password, password))) {
-      return res.status(404).json({ error: "Invalid email or password" });
+      return res.json({ error: "Incorret password" });
     }
 
-    cookeieToken(user, res);
+    const signedToken = getjwtToken(user.id || org.id);
 
-    return res.status(200).json({ message: "Logged In" });
+    return res
+      .cookie("token", signedToken, {
+        expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        httpOnly: true,
+      })
+      .json({
+        success: true,
+        signedToken,
+      });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    res.json({ error: "Internal server error" });
   }
+};
+
+exports.checkauth = async (req, res) => {
+  const tk = req.headers["authorization"];
+  if (!tk) return res.sendStatus(403);
+
+  if (!verJwtToken(tk)) return res.sendStatus(403);
+
+  const { userId, iat, exp } = verJwtToken(tk);
+
+  if (exp > Date.now()) {
+    return res.sendStatus(403);
+  }
+
+  const checkUser = await prisma.user.findFirst({ where: { id: userId } });
+  const checkOrg = await prisma.organization.findFirst({
+    where: { id: userId },
+  });
+
+  if (!checkUser && !checkOrg) {
+    return res.sendStatus(403);
+  } else if (!!checkUser) {
+    return res.json({ auth: true, type: "normal" });
+  } else if (!!checkOrg) {
+    return res.json({ auth: true, type: "org" });
+  }
+
+  return res.sendStatus(200);
+};
+
+exports.logout = (req, res) => {
+  res.clearCookie("token");
+
+  return res.sendStatus(200);
 };

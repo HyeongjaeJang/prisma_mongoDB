@@ -19,7 +19,6 @@ model User {
   updatedAt    DateTime @updatedAt
   need         String[]
   location     String?
-  type         String
   subscription Event[]
 }
 
@@ -32,8 +31,6 @@ model Event {
   organization   Organization  @relation(fields: [organizationId], references: [id])
   organizationId String        @db.ObjectId
   location       String
-  // notification   Notification @relation(fields: [notificationId], references: [id])
-  // notificationId String       @db.ObjectId
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   foods          Food[]
