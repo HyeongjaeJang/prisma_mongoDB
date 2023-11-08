@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String?
+  email        String   @unique
+  password     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  need         String[]
+  location     String?
+  type         String
+  subscription Event[]
+}
+
+model Event {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  keyword        String[]
+  title          String
+  description    String
+  eventDate      DateTime
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organizationId String        @db.ObjectId
+  location       String
+  // notification   Notification @relation(fields: [notificationId], references: [id])
+  // notificationId String       @db.ObjectId
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  foods          Food[]
+  User           User?         @relation(fields: [userId], references: [id])
+  userId         String?       @db.ObjectId
+  Faq            Faq[]
+  Notification   Notification? @relation(fields: [notificationId], references: [id])
+  notificationId String?       @db.ObjectId
+}
+
+model Notification {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Event       Event[]
+}
+
+model Organization {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  Event     Event[]
+  type      String
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Faq {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  rate        Float
+  events      Event    @relation(fields: [eventId], references: [id])
+  keyword     String[]
+  eventId     String   @db.ObjectId
+}
+
+model Food {
+  id      String   @id @default(uuid()) @map("_id") @db.ObjectId
+  title   String
+  Event   Event?   @relation(fields: [eventId], references: [id])
+  eventId String?  @db.ObjectId
+  keyword String[]
+}
