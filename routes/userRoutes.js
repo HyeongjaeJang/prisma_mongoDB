@@ -13,6 +13,11 @@ const {
   deleteEvent,
   updateEvent,
 } = require("../controllers/eventControllers");
+const {
+  uploadFaq,
+  deleteFaq,
+  updateFaq,
+} = require("../controllers/faqController");
 
 router.route("/signup").post(signup);
 router.route("/login").post(login);
@@ -23,5 +28,8 @@ router.route("/deleteEvent").delete(deleteEvent);
 router.route("/updateEvent").put(updateEvent);
 router.route("/notification").post(notification);
 router.route("/uploadImage").post(uploadImage);
+router.route("/uploadFaq").post(updateFaq);
+router.route("/deleteFaq").delete(deleteFaq);
+router.route("/updateFaq").put(updateFaq);
 
 module.exports = router;

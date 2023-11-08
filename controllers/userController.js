@@ -7,33 +7,40 @@ const verJwtToken = require("../helpers/verJwtToken");
 
 exports.signup = async (req, res) => {
   try {
-    const {
-      data: { username, email, password, type },
-    } = req.body;
-    if (!username || !email || !password || !type) {
-      return res.json({ error: "Please provide all fields" });
+    const { data } = req.body;
+
+    if (
+      !data ||
+      !data.username ||
+      !data.email ||
+      !data.password ||
+      !data.type
+    ) {
+      return res.status(400).json({ error: "Please provide all fields" });
     }
 
+    const { username, email, password, type } = data;
+
     if (!isEmail(email)) {
-      return res.json({ error: "Email is invalid" });
+      return res.status(400).json({ error: "Email is invalid" });
     }
 
     if (!isStrongPassword(password)) {
-      return res.json({ error: "Strong password is required" });
+      return res.status(400).json({ error: "Strong password is required" });
     }
 
-    if (!!(await prisma.user.findFirst({ where: { email: email } }))) {
-      return res.json({ error: "Already registered" });
-    }
-    if (!!(await prisma.organization.findFirst({ where: { email: email } }))) {
-      return res.json({ error: "Already registered" });
+    if (
+      !!(await prisma.user.findFirst({ where: { email: email } })) ||
+      !!(await prisma.organization.findFirst({ where: { email: email } }))
+    ) {
+      return res.status(400).json({ error: "Already registered" });
     }
 
     const hash = await argon2.hash(password);
     let user = "";
     let org = "";
 
-    if (type == "normal") {
+    if (type === "normal") {
       user = await prisma.user.create({
         data: {
           name: username,
@@ -65,7 +72,8 @@ exports.signup = async (req, res) => {
         signedToken,
       });
   } catch (err) {
-    return res.json({ error: "Internal server error" });
+    console.error("Error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

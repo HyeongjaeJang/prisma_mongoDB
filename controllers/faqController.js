@@ -47,7 +47,7 @@ exports.uploadFaq = async (req, res) => {
   }
 };
 
-exports.deleteEvent = async (req, res) => {
+exports.deleteFaq = async (req, res) => {
   try {
     const { id } = req.body;
     const faq = await prisma.faq.findFirst({
@@ -85,7 +85,7 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
-exports.updateEvent = async (req, res) => {
+exports.updateFaq = async (req, res) => {
   try {
     const { id, title, description, keyword } = req.body;
 

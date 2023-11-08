@@ -1,6 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const cors = require("codr");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const cloudinary = require("cloudinary").v2;
 require("dotenv").config();

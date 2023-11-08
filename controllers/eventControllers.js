@@ -5,14 +5,7 @@ const verJwtToken = require("../helpers/verJwtToken");
 exports.uploadEvent = async (req, res) => {
   try {
     const { keyword, eventDate, title, description, location } = req.body;
-    if (
-      !keyword ||
-      !eventDate ||
-      !title ||
-      !description ||
-      !organization ||
-      !location
-    ) {
+    if (!keyword || !eventDate || !title || !description || !location) {
       return res.status(400).json({ error: "Please provide all fields" });
     }
 
