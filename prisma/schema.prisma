@@ -28,15 +28,12 @@ model Event {
   title          String
   description    String
   eventDate      DateTime
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  organizationId String        @db.ObjectId
   location       String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  foods          Food[]
+  foods          String[]
   User           User?         @relation(fields: [userId], references: [id])
   userId         String?       @db.ObjectId
-  Faq            Faq[]
   Notification   Notification? @relation(fields: [notificationId], references: [id])
   notificationId String?       @db.ObjectId
 }
@@ -55,7 +52,6 @@ model Organization {
   name      String
   email     String   @unique
   password  String
-  Event     Event[]
   type      String
   location  String?
   createdAt DateTime @default(now())
@@ -66,16 +62,7 @@ model Faq {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String
-  rate        Float
-  events      Event    @relation(fields: [eventId], references: [id])
   keyword     String[]
-  eventId     String   @db.ObjectId
-}
-
-model Food {
-  id      String   @id @default(uuid()) @map("_id") @db.ObjectId
-  title   String
-  Event   Event?   @relation(fields: [eventId], references: [id])
-  eventId String?  @db.ObjectId
-  keyword String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
